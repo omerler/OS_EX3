@@ -13,34 +13,8 @@
 #define INVALID_INPUT "Usage: <substring to search> <folders, separated by space>"
 #define RESERVE "reserve"
 #define MALLOC "malloc"
-#define EXIT_FAILURE -1
-
-
 
 char * stringToSearch;
-
-typedef struct k1Base * k1BaseP;
-typedef struct v1Base * v1BaseP;
-
-struct k1v1{
-    k1BaseP k1Basep;
-    v1BaseP v1Basep;
-};
-
-typedef struct k1v1 * k1v1P;
-
-// Create a vector containing integers
-
-
-//// Add two more integers to vector
-//v.push_back(25);
-//v.push_back(13);
-//
-//// Iterate and print values of vector
-//for(int n : v) {
-//std::cout << n << '\n';
-//}
-
 
 void validateInput(int argc){
 	//Check if input is valid.
@@ -54,45 +28,49 @@ void validateInput(int argc){
 	// else, valid input, return
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
 	validateInput(argc);
 	int numOfLibrariesToSearch = argc - 2; //first is SEARCH, second is the string to search
 	int multiThreadLevel = numOfLibrariesToSearch; // number of threads for the map level and
 	
 	//Create first container as a vector
-	std::vector<k1v1P> container;
+	IN_ITEMS_VEC<IN_ITEM> container;
 	try {
-		container.reserve((unsigned long)multiThreadLevel);  // Allocate it's own space
-	} catch (const std::length_error& le) { //allocation error
+		container.reserve((unsigned long) multiThreadLevel);  // Allocate it's own space
+	} catch (const std::length_error &le) { //allocation error
 		throw ReduceFrameworkException(RESERVE);
 	}
-	stringToSearch =(char *)malloc(FILENAME_MAX * sizeof(char));
-	if (stringToSearch == NULL){
+	stringToSearch = (char *) malloc(FILENAME_MAX * sizeof(char));
+	if (stringToSearch == NULL) {
 		throw ReduceFrameworkException(MALLOC);
 	}
-	stringToSearch = argv[1]; //verify if 0 or 1
+	stringToSearch = argv[1];
 	
-	
-	int i = 0;
-	for (i; i < numOfLibrariesToSearch; i++){
-		k1v1 temp = {(k1BaseP)argv[i], (v1BaseP)stringToSearch};
-		container.push_back(&temp);
+	for (int i = 0; i < numOfLibrariesToSearch; i++) {
+		IN_ITEM temp;
+		temp.first = argv[i];
+		temp.second = stringToSearch;
+		container.push_back(temp);
 	}
 	
-
-
-    //initialize K1 and V1 from the input
-    k1Base newk1 = new()
-
-
-    typedef MapReduceBase * MapReduceP;
-    MapReduceP mapReduceP = new(); //how to initiate with pointer?
-    mapReduceP->Map()
-
-    MapReduceBase mapReduceBase2 = new()
-    /**
-     *
-     *
-     *
-     */
+	MapReduceBase mapReduceBase;
+	OUT_ITEMS_VEC outItemsVec = RunMapReduceFramework(&MapReduceBase., container,
+													  multiThreadLevel, false);
+	
+	unsigned long outSize = outItemsVec.size();
+	for (unsigned long j = 0; j < outSize; j++) {
+		OUT_ITEM out_item = outItemsVec.at(j);
+		for (int k = 0; k < out_item.second; k++) {
+			if (k == 0) {
+				std::cout << out_item.first;
+			} else {
+				std::cout << ' ' << out_item.first;
+			}
+		}
+		delete (out_item.first);
+		delete (out_item.second);
+		delete (out_item);
+	}
+	delete outItemsVec;
+	return (EXIT_SUCCESS);
 }
