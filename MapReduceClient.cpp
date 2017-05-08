@@ -8,7 +8,10 @@
 #include <dirent.h>
 #include <libltdl/lt_system.h>
 #include <cstdio>
+#include <stdlib.h>
 #include "ReduceFrameworkException.h"
+#include "MapReduceFramework.h"
+
 
 //input key and value.
 //the key, value for the map function and the MapReduceFramework
@@ -27,7 +30,7 @@ public:
 class v1Base {
 public:
     char *stringToSearch;
-    virtual ~v1Base(char* inputString) {
+    v1Base(char* inputString) {
         stringToSearch = inputString;
     }
 };
@@ -37,10 +40,10 @@ public:
 class k2Base {
 public:
     char* pathName;
-    virtual ~k2Base(char* pathNameContainsString){
+    k2Base(char* pathNameContainsString){
         pathName = pathNameContainsString;
     }
-    virtual bool operator<(const k2Base &other) const {
+    bool operator<(const k2Base &other) const {
         return (strcmp(pathName, (k2Base&)other.pathName) <= 0); //returns true if the path name of the k1Base is lexicographic
         //smaller then the other path name
     };
@@ -49,7 +52,7 @@ public:
 class v2Base {
 public:
     int didAppear = 1; //did appear =1 if the string appears in the fileName
-    virtual ~v2Base(){}
+    v2Base(){}
 };
 
 //output key and value
@@ -57,10 +60,10 @@ public:
 class k3Base {
 public:
     char* pathName;
-    virtual ~k3Base(char* pathNameContainsString)  {
+    k3Base(char* pathNameContainsString)  {
         pathName = pathNameContainsString;
     }
-    virtual bool operator<(const k3Base &other) const{
+    bool operator<(const k3Base &other) const{
         return (strcmp(pathName, (k3Base&)other.pathName) <= 0); //returns true if the path name of the k1Base is lexicographic
         //smaller then the other path name
     };
@@ -69,7 +72,7 @@ public:
 class v3Base {
 public:
     int counter;
-    virtual ~v3Base(int counterOfAppear) {
+    v3Base(int counterOfAppear) {
         counter = counterOfAppear;
     }
 };
@@ -79,44 +82,56 @@ typedef std::vector<v2Base *> V2_VEC;
 class MapReduceBase {
 public:
 
-    int mapHelper(char* fileName, char* stringToSearch)const {} //if the given string is Substring of the file name,
-    //return 0
+    /*
+     * Assisting function to Map- the function checks if the given stringToSearch is substring of the given fileName,
+     * and if so- returns 0.
+     */
+    int mapHelper(char* fileName, char* stringToSearch)const {
+        if(strstr(fileName, stringToSearch) != NULL) {
+            return 0;
+        }
+        return -1;
+    }
 
-    void Map(const k1Base *const key, const v1Base *const val) const{
+    void Map(const k1Base *const key, const v1Base *const val) const{ //todo- can we get a file which is not a directory, and search for our str in it?
         k1Base* k1Base1 = (k1Base*) key;
         v1Base* v1Base1 = (v1Base*) val;
 
         struct stat path_stat; //check if the k1 is directory or regular file
         stat(k1Base1->pathName, &path_stat);
-
-        int res;
-        if (S_ISDIR(path_stat.st_mode)){
+        if (S_ISDIR(path_stat.st_mode)){ //if k1 is directory
             DIR *dir;
             struct dirent *ent;
             if ((dir = opendir (k1Base1->pathName)) != NULL) {
-                /* print all the files and directories within directory */
+                /* iterate all the files and directories within directory */
                 while ((ent = readdir (dir)) != NULL) {
                     //check if the file name contains the needed string
-                    res = mapHelper(ent->d_name, v1Base1->stringToSearch);
+                    int res = mapHelper(ent->d_name, v1Base1->stringToSearch);
+                    if (res == 0){
+                        k2Base* k2Base1 = new k2Base(k1Base1->pathName);
+                        v2Base* v2Base1 = new v2Base();
+
+                        Emit2(k2Base1, v2Base1);
+                    }
                 }
                 closedir (dir);
             } else {
-                /* could not open directory */
+                /* could not open directory or empty directory */
                 throw ReduceFrameworkException ("openDir");
-                //return EXIT_FAILURE; //todo- check if needed to exit the program
             }
-        } else {
-            res = mapHelper(k1Base1->pathName, v1Base1->stringToSearch);
         }
-        if (res == 0){
-            k2Base* k2Base1 = new k2Base(k1Base1->pathName);
-        }
-
-
-
     };
-    void Reduce(const k2Base *const key, const V2_VEC &vals) const = 0;
-};
+
+    void Reduce(const k2Base *const key, const V2_VEC &vals) const{
+        if (&key != NULL && vals.size()!=0){
+            k2Base * k2Base1 = new k2Base(key->pathName);
+            k3Base *k3BaseP = new k3Base((k2Base1->pathName));
+            int v2VecLength = (int)vals.size();
+            v3Base *v3Base1P = new v3Base(v2VecLength);
+            Emit3(k3BaseP,v3Base1P);
+        }
+        //todo think if here should i delete (dealloc) the V2 CONTAINERS (indicated by autoDeleteV2K2)
+    }};
 
 
 #endif //MAPREDUCECLIENT_H
