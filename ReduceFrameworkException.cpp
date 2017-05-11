@@ -3,11 +3,13 @@
 #include <string>
 
 
-ReduceFrameworkException::ReduceFrameworkException(std::string functionName) {
-	error = FAIL_PART_1 + functionName + FAIL_PART_2;
+ReduceFrameworkException::ReduceFrameworkException(char * functionName) {
+	char * tmp = __CONCAT((char *)FAIL_PART_1, functionName);
+	error = __CONCAT(tmp,FAIL_PART_2);
+	
 }
 
-const std::string ReduceFrameworkException::getMsg() const throw()
+const char * ReduceFrameworkException::getMsg() const throw()
 {
 	return error;
 }

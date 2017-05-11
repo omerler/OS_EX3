@@ -15,14 +15,14 @@
 class ReduceFrameworkException : public std::exception {
 
 public:
-	ReduceFrameworkException(std::string msg);
+	ReduceFrameworkException(char* msg);
 	
-	~ReduceFrameworkException() throw() {}
+	virtual ~ReduceFrameworkException() throw() {}
 	
-	virtual const std::string getMsg() const throw();
+	virtual const char * getMsg() const throw();
 
 private:
-	std::string error;
+	char *  error;
 };
 
 #endif //OSEX3_REDUCEFRAMEWORKEXCEPTION_H

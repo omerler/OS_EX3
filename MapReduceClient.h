@@ -20,7 +20,7 @@ public:
 //the key, value for the Reduce function created by the Map function
 class k2Base {
 public:
-	virtual ~k2Search(){}
+	virtual ~k2Base(){}
     virtual bool operator<(const k2Base &other) const = 0;
 };
 
@@ -42,12 +42,12 @@ public:
 	virtual ~v3Base() {}
 };
 
-typedef std::vector<v2Base *> value2_vec;
+typedef std::vector<v2Base *> V2_VEC;
 
 class MapReduceBase {
 public:
     virtual void Map(const k1Base *const key, const v1Base *const val) const = 0;
-    virtual void Reduce(const k2Search *const key, const value2_vec &vals) const = 0;
+    virtual void Reduce(const k2Base *const key, const V2_VEC &vals) const = 0;
 };
 
 

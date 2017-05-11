@@ -1,7 +1,6 @@
 
 #include <vector>
 #include <libltdl/lt_system.h>
-#include "MapReduceClient.h"
 #include <cstdio>
 #include <stdlib.h>
 #include <stdexcept>
@@ -9,12 +8,15 @@
 #include <malloc.h>
 #include "MapReduceFramework.h"
 #include "ReduceFrameworkException.h"
+#include "MapReduceSearch.h"
 
 #define INVALID_INPUT "Usage: <substring to search> <folders, separated by space>"
 #define RESERVE "reserve"
 #define MALLOC "malloc"
 
 char * stringToSearch;
+void * printOutput(OUT_ITEMS_VEC outItemsVec);
+
 
 void validateInput(int argc){
 	//Check if input is valid.
@@ -33,44 +35,54 @@ int main(int argc, char* argv[]) {
 	int numOfLibrariesToSearch = argc - 2; //first is SEARCH, second is the string to search
 	int multiThreadLevel = numOfLibrariesToSearch; // number of threads for the map level and
 	
-	//Create first container as a vector
-	IN_ITEMS_VEC<IN_ITEM> container;
+	//Create first inputVector as a vector
+	IN_ITEMS_VEC inputVector;
+	inputVector.reserve((unsigned long)argc);
 	try {
-		container.reserve((unsigned long) multiThreadLevel);  // Allocate it's own space
+		inputVector.reserve((unsigned long) multiThreadLevel);  // Allocate it's own space
 	} catch (const std::length_error &le) { //allocation error
-		throw ReduceFrameworkException(RESERVE);
+		throw ReduceFrameworkException((char *)RESERVE);
 	}
 	stringToSearch = (char *) malloc(FILENAME_MAX * sizeof(char));
 	if (stringToSearch == NULL) {
-		throw ReduceFrameworkException(MALLOC);
+		throw ReduceFrameworkException((char *)MALLOC);
 	}
 	stringToSearch = argv[1];
 	
 	for (int i = 0; i < numOfLibrariesToSearch; i++) {
 		IN_ITEM temp;
-		temp.first = argv[i];
-		temp.second = stringToSearch;
-		container.push_back(temp);
+		k1BaseSearch k1BaseSearch1 = k1BaseSearch(argv[i]);
+		temp.first = &k1BaseSearch1;
+		v1BaseSearch v1BaseSearch1 = v1BaseSearch(stringToSearch);
+		temp.second = &v1BaseSearch1;
+		
+		inputVector.push_back(temp);
 	}
 	
 	MapReduceBase mapReduceBase;
-	OUT_ITEMS_VEC outItemsVec = RunMapReduceFramework(&MapReduceBase., container,
+	OUT_ITEMS_VEC outItemsVec = RunMapReduceFramework(mapReduceBase, inputVector,
 													  multiThreadLevel, false);
-	
+	printOutput(outItemsVec);
+
+	return (EXIT_SUCCESS);
+}
+
+void * printOutput(OUT_ITEMS_VEC outItemsVec){
 	unsigned long outSize = outItemsVec.size();
 	for (unsigned long j = 0; j < outSize; j++) {
 		OUT_ITEM out_item = outItemsVec.at(j);
-		for (int k = 0; k < out_item.second; k++) {
+		v3BaseSearch* v3BaseSearch1 = (v3BaseSearch*)(out_item.second);
+		for (int k = 0; k < v3BaseSearch1->counter; k++) {
 			if (k == 0) {
 				std::cout << out_item.first;
 			} else {
 				std::cout << ' ' << out_item.first;
 			}
 		}
-		delete (out_item.first);
-		delete (out_item.second);
-		delete (out_item);
+		delete (&out_item.first);
+		delete (&out_item.second);
+		delete (&out_item);
 	}
-	delete outItemsVec;
-	return (EXIT_SUCCESS);
+	delete &outItemsVec;
+	
 }
